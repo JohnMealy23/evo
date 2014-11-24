@@ -44,14 +44,13 @@ var evo = function() {
 	evo.speciesRecord = {};
 	evo.lifeProcesses = {
 		eat: function(dna, stats) {
-			stats.fed += dna.eat.rate;
+			stats.fed += parseFloat(dna.eat.rate);
 			return stats;
 		},
 		breed: function(dna, stats) {
 			var name = getName();
 			evo.dnaRecord[name] = dna; 
 			evo.habitat[name] = new evo.organism(dna,stats,name);
-			evo.domBirth(stats,name);
 			stats.children += 1;
 			return stats;
 		},
@@ -101,11 +100,11 @@ var evo = function() {
 			name: 'grow'
 		},
 		age: {
-			frequency: 5000,
+			frequency: 4000,
 			process: [evo.lifeProcesses.age],
 			rate: 1,
 			min: 0,
-			max: 10, // Lifespan in number of cycles
+			max: 5, // Lifespan in number of cycles
 			init: 0,
 			name: 'age'
 		}
@@ -125,7 +124,8 @@ var evo = function() {
 	// Increase the odds for bad mutation over good. Perhaps create stomach = {} which only has ports for 3,5,8. mutations that hit those ports help, and those that don't, hurt. 
 	// It would be OK to duplicate traits, instead of adjusting values
 	// Another thought is to only increase one dnaComponent if another is being decreased, and vice versa 
-		var mutationRate = document.getElementById("mutationRate").value || 30, 
+		dnaComponent.frequency = parseFloat(dnaComponent.frequency);
+		var mutationRate = document.getElementById("mutationRate").value || 300, 
 			theOdds = {
 				onePercent: function() {
 					//1:100
@@ -151,16 +151,17 @@ var evo = function() {
 			console.log(dnaComponent, "Frequency increased: " + dnaComponent.name);
 		}
 		else {
-			dnaComponent.frequency += dnaComponent.frequency * 1.3; //
+			dnaComponent.frequency += parseFloat(dnaComponent.frequency) * 1.3; //
 			console.log(dnaComponent, "Frequency decreased: " + dnaComponent.name);
 		}
-		dice = theOdds.twoToOne();
-		if(dice === 0) return dnaComponent;
-		else if((dice > 0) && dnaComponent.process.length !== 0) delete dnaComponent.process[dnaComponent.process.length - 1];
-		else dnaComponent.process.push(dnaComponent.process[0]);
+		// dice = theOdds.twoToOne();
+		// if(dice === 0) return dnaComponent;
+		// else if((dice > 0) && dnaComponent.process.length !== 0) delete dnaComponent.process[dnaComponent.process.length - 1];
+		// else dnaComponent.process.push(dnaComponent.process[0]);
 		return dnaComponent;
 	};
 	evo.organism = function(parentDna, parentStats, name) {
+		
 		var dna = new evo.dna(parentDna),
 			stats = {
 				name: name,
@@ -181,6 +182,7 @@ var evo = function() {
 			stats.init[key] = dna[key].init;
 		};
 		stats.lineage[stats.name] = stats.surname;
+		evo.domBirth(stats);
 		function killIt(stats, processType) {
 			var domOrg = document.getElementById("organism_" + stats.name);
 			domOrg.style.backgroundColor = 'blue';
@@ -235,20 +237,21 @@ var evo = function() {
 		if(!evo.speciesRecord[stats.speciesCode]) evo.speciesRecord[stats.speciesCode] = [stats.name];
 		else evo.speciesRecord[stats.speciesCode].push(stats.name);
 	};
-	evo.domBirth = function(stats,name) {
+	evo.domBirth = function(stats) {
 		if(!evo.evolutionInit) evo.initializeDom();
 		var habitatElem = document.getElementById("evoGraphs"), //
 			sectionId = "section_" + stats.surname,
 			sectionElem = document.getElementById(sectionId) || createElem(sectionId, habitatElem, 'evo_section'),
 			graphId = "graph_" + stats.speciesCode,
 			graphElem = document.getElementById(graphId),
-			organismId = "organism_" + name,
+			organismId = "organism_" + stats.name,
 			organismElem = {};
-		graphElem = graphElem || createElem(graphId, sectionElem, 'evo_graph');
-		function createElem(elemId, parent, elemClass) {
+		graphElem = graphElem || createElem(graphId, sectionElem, 'evo_graph', stats.speciesCode);
+		function createElem(elemId, parent, elemClass, elemTitle) {
 			var elem = document.createElement('div');
 			elem.id = elemId;
 			if(elemClass) elem.className = elemClass;
+			if(elemTitle) elem.title = elemTitle;
 			parent.appendChild(elem);
 			return elem;
 		}
